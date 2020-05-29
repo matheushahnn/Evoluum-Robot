@@ -110,18 +110,6 @@ describe('Robot', () => {
         Robot.moveForward(currentPosition);
       }).toThrowError(new ErrorHandler(400, 'Posição inválida'));
     });
-
-    it('should throw an error when side is different of (N, E, S or W)', () => {
-      const currentPosition = {
-        x: 0,
-        y: 0,
-        side: 'J',
-      };
-
-      expect(() => {
-        Robot.moveForward(currentPosition);
-      }).toThrowError(new ErrorHandler(400, 'Posição inválida'));
-    });
   });
   describe('# turnToRight()', () => {
     it('should return the robot turned one position to right', () => {
@@ -227,6 +215,28 @@ describe('Robot', () => {
       };
 
       expect(Robot.move(currentPosition, 'L')).toMatchObject(expectedPosition);
+    });
+    it('should throw an error when command is different of (M, R or L)', () => {
+      const currentPosition = {
+        x: 0,
+        y: 0,
+        side: 'N',
+      };
+
+      expect(() => {
+        Robot.move(currentPosition, 'J');
+      }).toThrowError(new ErrorHandler(400, 'Comando inválido'));
+    });
+    it('should throw an error when side is different of (N, E, S or W)', () => {
+      const currentPosition = {
+        x: 0,
+        y: 0,
+        side: 'J',
+      };
+
+      expect(() => {
+        Robot.move(currentPosition, 'L');
+      }).toThrowError(new ErrorHandler(400, 'Posição inválida'));
     });
   });
 });

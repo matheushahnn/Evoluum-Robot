@@ -3,44 +3,45 @@ const { ErrorHandler } = require('../helpers/error');
 const posiblesSides = ['N', 'E', 'S', 'W'];
 const possiblesAction = ['L', 'R', 'M'];
 
-const moveForward = (currentPosition) => {
-  const { side } = currentPosition;
-  const newCurrentPosition = { ...currentPosition };
 
-  switch (side) {
-    case 'N':
-      if (currentPosition.y === 4) {
-        throw new ErrorHandler(400, 'Posição inválida');
-      }
-      newCurrentPosition.y = currentPosition.y + 1;
-      break;
-    case 'S':
-      if (currentPosition.y === 0) {
-        throw new ErrorHandler(400, 'Posição inválida');
-      }
-      newCurrentPosition.y = currentPosition.y - 1;
-      break;
-    case 'E':
-      if (currentPosition.x === 4) {
-        throw new ErrorHandler(400, 'Posição inválida');
-      }
-      newCurrentPosition.x = currentPosition.x + 1;
-      break;
-    case 'W':
-      if (currentPosition.x === 0) {
-        throw new ErrorHandler(400, 'Posição inválida');
-      }
-      newCurrentPosition.x = currentPosition.x - 1;
-      break;
-    default: throw new ErrorHandler(400, 'Posição inválida');
+const setPosition = (currentPosition) => {
+  const { side } = currentPosition;
+
+  const action = {
+    N: () => ({
+      ...currentPosition,
+      y: currentPosition.y + 1,
+    }),
+    E: () => ({
+      ...currentPosition,
+      x: currentPosition.x + 1,
+    }),
+    W: () => ({
+      ...currentPosition,
+      x: currentPosition.x - 1,
+    }),
+    S: () => ({
+      ...currentPosition,
+      y: currentPosition.y - 1,
+    }),
+  };
+
+  return action[side]();
+};
+
+const moveForward = (currentPosition) => {
+  const position = setPosition(currentPosition);
+
+  if (position.y > 4 || position.y < 0 || position.x > 4 || position.x < 0) {
+    throw new ErrorHandler(400, 'Posição inválida');
   }
 
-  return newCurrentPosition;
+  return position;
 };
 
 const turnToRight = (currentPosition) => {
-  const positionIndex = posiblesSides.indexOf(currentPosition.side);
   const newCurrentPosition = { ...currentPosition };
+  const positionIndex = posiblesSides.indexOf(currentPosition.side);
   const InitialIndex = 0;
 
   if (positionIndex === 3) {
@@ -54,8 +55,8 @@ const turnToRight = (currentPosition) => {
 };
 
 const turnToLeft = (currentPosition) => {
-  const positionIndex = posiblesSides.indexOf(currentPosition.side);
   const newCurrentPosition = { ...currentPosition };
+  const positionIndex = posiblesSides.indexOf(currentPosition.side);
   const finalIndex = 3;
 
   if (positionIndex === 0) {
@@ -68,31 +69,29 @@ const turnToLeft = (currentPosition) => {
   return newCurrentPosition;
 };
 
-const move = (currentPosition, action) => {
-  let newPosition;
+const moveByAction = (currentPosition, command) => {
+  const action = {
+    M: () => moveForward(currentPosition),
+    R: () => turnToRight(currentPosition),
+    L: () => turnToLeft(currentPosition),
+  };
+  return action[command]();
+};
 
+const move = (currentPosition, action) => {
   if (possiblesAction.indexOf(action) === -1) {
     throw new ErrorHandler(400, 'Comando inválido');
   }
-
-  if (action === 'M') {
-    newPosition = moveForward(currentPosition);
+  if (posiblesSides.indexOf(currentPosition.side) === -1) {
+    throw new ErrorHandler(400, 'Posição inválida');
   }
 
-  if (action === 'R') {
-    newPosition = turnToRight(currentPosition);
-  }
-
-  if (action === 'L') {
-    newPosition = turnToLeft(currentPosition);
-  }
-
-  return newPosition;
+  return moveByAction(currentPosition, action);
 };
 
-const movimentRobot = (req, res, next) => {
-  const { moviment } = (req.params);
-  const actions = moviment.split('');
+const movementRobot = (req, res, next) => {
+  const { movement } = (req.params);
+  const actions = movement.split('');
   const initialPosition = {
     x: 0,
     y: 0,
@@ -100,15 +99,15 @@ const movimentRobot = (req, res, next) => {
   };
 
   try {
-    const robotPosition = actions.reduce(move, initialPosition);
-    res.send(`(${robotPosition.x}, ${robotPosition.y}, ${robotPosition.side})`);
+    const { x, y, side } = actions.reduce(move, initialPosition);
+    res.send(`(${x}, ${y}, ${side})`);
   } catch (error) {
     next(error);
   }
 };
 
 module.exports = {
-  movimentRobot,
+  movementRobot,
   moveForward,
   turnToRight,
   turnToLeft,
